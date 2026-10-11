@@ -11,7 +11,7 @@ records what each of my cables actually does when it sits between my Mac and a r
 | Cable | How to spot it | Rated | E-marker says | Best link | AYN Thor push / pull (MB/s) | Samsung PSSD T7 Shield write / read (MB/s) | Verdict |
 |---|---|---|---|---|---|---|---|
 | **Insta360 X6 cable**<br>Insta360 | – | – | – | 10 Gb/s | 479 / 433 | – | Full 10 Gb/s data. |
-| **LTT USB-C cable**<br>LTT Store | – | 40 Gb/s · 240 W | USB4 Gen 3 · 240 W · about 1 m | 10 Gb/s | 479 / 436 | 853 / 828 | Full 10 Gb/s data. |
+| **LTT USB-C cable**<br>LTT Store | – | 40 Gb/s · 240 W | USB4 Gen 3 · 240 W · about 1 m | 10 Gb/s | 479 / 436 | 855 / 820 | Full 10 Gb/s data. |
 | **AYN Thor stock cable**<br>AYN | – | – | – | 480 Mb/s | 39 / 44 | – | USB 2.0 only. Charging and slow data. |
 <!-- cables:end -->
 

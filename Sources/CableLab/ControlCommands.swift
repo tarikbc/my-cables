@@ -195,8 +195,8 @@ extension LabModel {
         case .done(let result):
             out["state"] = "done"
             out["result"] = Control.object(result)
-            out["write_mbps"] = NSDecimalNumber(string: String(format: "%.1f", result.writeMBps))
-            out["read_mbps"] = NSDecimalNumber(string: String(format: "%.1f", result.readMBps))
+            out["write_mbps"] = Int(result.writeMBps.rounded())
+            out["read_mbps"] = Int(result.readMBps.rounded())
         case .failed(let message):
             out["state"] = "failed"
             out["error"] = message
