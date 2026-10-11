@@ -47,7 +47,8 @@ public enum Bench {
 
     /// Root only ever runs these two Apple tools from the sealed system volume, never Cable Lab's own
     /// binary (which lives in a folder the user can write). The benchmark itself always runs as the user.
-    static let rootCreate = "/usr/bin/install"
+    static let rootCreate = "/usr/bin/touch"
+    static let rootChown = "/usr/sbin/chown"
     static let rootRemove = "/bin/rm"
 
     /// Runs the benchmark as the current user. When `password` is given, sudo first creates an empty
@@ -69,10 +70,22 @@ public enum Bench {
             say("Writing then reading \(size / gib) GiB on “\(volume)”.")
             return try runBench(path: path, bytes: size, existing: false)
         }
+        // Only a folder that root owns and this user cannot write is safe: nobody else running as this
+        // user can then put a symlink at `path` between the sudo steps.
+        guard rootOnlyFolder(mount) else {
+            throw BenchError.failed("The top folder of “\(volume)” is not owned by root only, so Cable Lab will not use sudo on it.")
+        }
         say("sudo creates an empty test file on “\(volume)” for you. Then Cable Lab writes and reads \(size / gib) GiB.")
-        try sudo(password, [rootCreate, "-o", String(getuid()), "-m", "600", "/dev/null", path])
         defer { _ = try? sudo(password, [rootRemove, "-f", "--", path]) }
+        try sudo(password, [rootCreate, path])
+        try sudo(password, [rootChown, "-h", String(getuid()), path])
         return try runBench(path: path, bytes: size, existing: true)
+    }
+
+    static func rootOnlyFolder(_ path: String) -> Bool {
+        var info = stat()
+        guard lstat(path, &info) == 0, info.st_mode & S_IFMT == S_IFDIR, info.st_uid == 0 else { return false }
+        return access(path, W_OK) != 0
     }
 
     static func runBench(path: String, bytes: Int64, existing: Bool) throws -> BenchNumbers {

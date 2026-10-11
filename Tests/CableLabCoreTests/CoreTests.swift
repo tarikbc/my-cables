@@ -190,8 +190,15 @@ final class BenchTests: XCTestCase {
     }
 
     func testRootOnlyRunsFixedSystemTools() {
-        XCTAssertEqual(Bench.rootCreate, "/usr/bin/install")
+        XCTAssertEqual(Bench.rootCreate, "/usr/bin/touch")
+        XCTAssertEqual(Bench.rootChown, "/usr/sbin/chown")
         XCTAssertEqual(Bench.rootRemove, "/bin/rm")
+    }
+
+    func testSudoOnlyForRootOwnedFoldersWeCannotWrite() {
+        XCTAssertTrue(Bench.rootOnlyFolder("/usr"))
+        XCTAssertFalse(Bench.rootOnlyFolder(FileManager.default.temporaryDirectory.path), "a folder we can write")
+        XCTAssertFalse(Bench.rootOnlyFolder("/etc"), "/etc is a symlink, so lstat must refuse it")
     }
 
     func testDiskBenchWritesReadsAndDeletes() throws {
