@@ -168,6 +168,32 @@ final class BenchTests: XCTestCase {
                        .failed("error: write: No space left on device"))
     }
 
+    func testExistingModeUsesOnlyAnEmptyRegularFileWeOwn() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("bench-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let empty = dir.appendingPathComponent("empty").path
+        FileManager.default.createFile(atPath: empty, contents: nil)
+        XCTAssertEqual(try DiskBench.run(path: empty, bytes: 8 << 20, existing: true).bytes, 8 << 20)
+
+        let full = dir.appendingPathComponent("full").path
+        FileManager.default.createFile(atPath: full, contents: Data([1]))
+        XCTAssertThrowsError(try DiskBench.run(path: full, bytes: 8 << 20, existing: true))
+
+        let target = dir.appendingPathComponent("target").path
+        FileManager.default.createFile(atPath: target, contents: nil)
+        let link = dir.appendingPathComponent("link").path
+        try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: target)
+        XCTAssertThrowsError(try DiskBench.run(path: link, bytes: 8 << 20, existing: true), "a symlink must be refused")
+        XCTAssertEqual(try FileManager.default.attributesOfItem(atPath: target)[.size] as? Int, 0)
+    }
+
+    func testRootOnlyRunsFixedSystemTools() {
+        XCTAssertEqual(Bench.rootCreate, "/usr/bin/install")
+        XCTAssertEqual(Bench.rootRemove, "/bin/rm")
+    }
+
     func testDiskBenchWritesReadsAndDeletes() throws {
         let path = FileManager.default.temporaryDirectory.appendingPathComponent("bench-\(UUID().uuidString)").path
         let n = try DiskBench.run(path: path, bytes: 32 << 20)

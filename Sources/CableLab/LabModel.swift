@@ -251,14 +251,13 @@ final class LabModel: ObservableObject {
 
     private func launch(cableID: String, endpoint: Endpoint, password: String?,
                         remember: Bool = false, fromKeychain: Bool = false) {
-        let helper = Bundle.main.executablePath ?? CommandLine.arguments[0]
         let host = self.host
         let report: @Sendable (String) -> Void = { text in Task { @MainActor in self.say(text) } }
         Task.detached(priority: .userInitiated) {
             do {
                 let numbers: BenchNumbers
                 switch endpoint.kind {
-                case .disk: numbers = try Bench.runDisk(endpoint, password: password, helper: helper, say: report)
+                case .disk: numbers = try Bench.runDisk(endpoint, password: password, say: report)
                 case .adb: numbers = try Bench.runADB(endpoint, say: report)
                 }
                 let result = CableResult(

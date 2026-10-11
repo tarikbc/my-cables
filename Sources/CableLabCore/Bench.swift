@@ -45,8 +45,14 @@ public enum Bench {
 
     // MARK: Disk
 
-    /// Runs `helper --bench-disk` directly, or through `sudo -S` when a password is given.
-    public static func runDisk(_ ep: Endpoint, password: String?, helper: String,
+    /// Root only ever runs these two Apple tools from the sealed system volume, never Cable Lab's own
+    /// binary (which lives in a folder the user can write). The benchmark itself always runs as the user.
+    static let rootCreate = "/usr/bin/install"
+    static let rootRemove = "/bin/rm"
+
+    /// Runs the benchmark as the current user. When `password` is given, sudo first creates an empty
+    /// test file owned by the user in the root-owned top folder, and removes it at the end.
+    public static func runDisk(_ ep: Endpoint, password: String?,
                                say: (String) -> Void) throws -> BenchNumbers {
         guard let mount = ep.mount, let volume = ep.volume else { throw BenchError.failed("This is not a disk.") }
         let size = diskTestSize(link: ep.linkBps)
@@ -59,18 +65,29 @@ public enum Bench {
             throw BenchError.backupRunning
         }
         let path = (mount as NSString).appendingPathComponent(testFileName)
-        let benchArgs = [helper, "--bench-disk", path, String(size)]
-        say("Writing then reading \(size / gib) GiB on “\(volume)”" + (password == nil ? "." : " as root."))
-
-        let out: ProcessOutput
-        if let password {
-            out = try Shell.run("/usr/bin/sudo", ["-S", "-k", "-p", ""] + benchArgs,
-                                input: Data((password + "\n").utf8), timeout: 1800)
-        } else {
-            out = try Shell.run(benchArgs[0], Array(benchArgs.dropFirst()), timeout: 1800)
+        guard let password else {
+            say("Writing then reading \(size / gib) GiB on “\(volume)”.")
+            return try runBench(path: path, bytes: size, existing: false)
         }
+        say("sudo creates an empty test file on “\(volume)” for you. Then Cable Lab writes and reads \(size / gib) GiB.")
+        try sudo(password, [rootCreate, "-o", String(getuid()), "-m", "600", "/dev/null", path])
+        defer { _ = try? sudo(password, [rootRemove, "-f", "--", path]) }
+        return try runBench(path: path, bytes: size, existing: true)
+    }
+
+    static func runBench(path: String, bytes: Int64, existing: Bool) throws -> BenchNumbers {
+        do {
+            return try DiskBench.run(path: path, bytes: bytes, existing: existing)
+        } catch let failure as POSIXFailure where failure.code == EPERM {
+            throw BenchError.blockedByPrivacy
+        }
+    }
+
+    /// Run one fixed system command as root. The password goes to sudo on stdin, never on the command line.
+    static func sudo(_ password: String, _ command: [String]) throws {
+        let out = try Shell.run("/usr/bin/sudo", ["-S", "-k", "-p", ""] + command,
+                                input: Data((password + "\n").utf8), timeout: 120)
         guard out.status == 0 else { throw classify(out.err) }
-        return try decode(out.out)
     }
 
     static func classify(_ stderr: String) -> BenchError {
@@ -81,13 +98,6 @@ public enum Bench {
         if stderr.contains("Operation not permitted") { return .blockedByPrivacy }
         let last = stderr.split(separator: "\n").last.map(String.init) ?? ""
         return .failed(last.isEmpty ? "The disk test failed." : last)
-    }
-
-    static func decode(_ stdout: String) throws -> BenchNumbers {
-        guard let line = stdout.split(separator: "\n").last else { throw BenchError.failed("The disk test printed nothing.") }
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        return try decoder.decode(BenchNumbers.self, from: Data(line.utf8))
     }
 
     // MARK: adb

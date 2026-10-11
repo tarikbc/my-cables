@@ -18,21 +18,32 @@ struct POSIXFailure: Error, CustomStringConvertible {
     var description: String { "\(operation): \(String(cString: strerror(code)))" }
 }
 
-/// Sequential write then read of one test file, with the page cache off.
-///
-/// The app runs this in a child copy of itself (`CableLab --bench-disk <path> <bytes>`), as root through
-/// sudo when the volume's top folder is not writable. The child prints one JSON line and always deletes
-/// the test file.
+/// Sequential write then read of one test file, with the page cache off. Runs in the app process,
+/// as the user, never as root.
 public enum DiskBench {
     static let block = 8 * 1024 * 1024
 
-    public static func run(path: String, bytes: Int64) throws -> BenchNumbers {
+    /// Write then read `bytes` at `path`, always as the current user.
+    ///
+    /// `existing: false` creates the file (O_EXCL). `existing: true` uses an empty file that root
+    /// prepared for us (see Bench.runDisk): it must be a regular file this user owns, and a symlink
+    /// at the path is refused, so a swapped path cannot redirect the write.
+    public static func run(path: String, bytes: Int64, existing: Bool = false) throws -> BenchNumbers {
         var buffer = [UInt8](repeating: 0, count: block)
         arc4random_buf(&buffer, block)
 
-        let wfd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0o600)
+        let flags = existing ? (O_WRONLY | O_NOFOLLOW) : (O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW)
+        let wfd = open(path, flags, 0o600)
         guard wfd >= 0 else { throw POSIXFailure("open") }
-        defer { unlink(path) }
+        if existing {
+            var info = stat()
+            guard fstat(wfd, &info) == 0, info.st_mode & S_IFMT == S_IFREG, info.st_uid == getuid(),
+                  info.st_size == 0 else {
+                close(wfd)
+                throw BenchError.failed("The prepared test file is not an empty file owned by you. Test stopped.")
+            }
+        }
+        defer { unlink(path) }  // Best effort. In a root-owned folder, Bench.runDisk removes it with sudo.
 
         var written: Int64 = 0
         let writeStart = DispatchTime.now()
@@ -66,23 +77,5 @@ public enum DiskBench {
 
     static func seconds(since start: DispatchTime) -> Double {
         Double(DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds) / 1e9
-    }
-
-    /// Entry point for `--bench-disk <path> <bytes>`. Returns the process exit code.
-    public static func commandLine(_ args: [String]) -> Int32 {
-        guard args.count == 2, let bytes = Int64(args[1]), bytes > 0 else {
-            FileHandle.standardError.write(Data("usage: CableLab --bench-disk <path> <bytes>\n".utf8))
-            return 64
-        }
-        do {
-            let numbers = try run(path: args[0], bytes: bytes)
-            let encoder = JSONEncoder()
-            encoder.keyEncodingStrategy = .convertToSnakeCase
-            FileHandle.standardOutput.write(try encoder.encode(numbers) + Data("\n".utf8))
-            return 0
-        } catch {
-            FileHandle.standardError.write(Data("error: \(error)\n".utf8))
-            return 2
-        }
     }
 }

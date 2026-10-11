@@ -64,9 +64,11 @@ The e-marker identifies a cable model, not one cable. Two cables of the same mod
 
 ### Disks that need root
 
-A Time Machine disk's top folder belongs to root, so the disk test must run as root. Cable Lab asks
-for your Mac password in its own sheet and passes it to `sudo -S`, which runs the app's own binary
-in a small benchmark mode (`CableLab --bench-disk`).
+A Time Machine disk's top folder belongs to root, so you cannot create a file there. Cable Lab asks
+for your Mac password in its own sheet and uses `sudo -S` for exactly two fixed Apple tools:
+`/usr/bin/install` creates an empty test file that you own, and `/bin/rm` removes it at the end. The
+benchmark itself always runs as you, inside the app. Cable Lab never runs its own binary as root,
+because that binary sits in a folder your user can write, and a swapped copy would then run as root.
 
 With **Remember in my Keychain** on, Cable Lab saves the password in your login Keychain after
 sudo accepts it, and root tests stop asking. Only Cable Lab can read it back. **Forget Saved
