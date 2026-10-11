@@ -69,6 +69,7 @@ extension LabModel {
                 id = cableID
                 fields = CableFields(cable)
             }
+            let before = fields
             let given = args["fields"] as? [String: String] ?? [:]
             if let v = given["name"] { fields.name = v }
             if let v = given["brand"] { fields.brand = v }
@@ -78,6 +79,8 @@ extension LabModel {
             if let v = given["ends"] { fields.ends = v }
             if let v = given["looks"] { fields.looks = v }
             if let v = given["notes"] { fields.notes = v }
+            // No name given: an automatic name follows brand and ratings, as in the app.
+            if given["name"] == nil { fields.refreshAutoName(previous: before) }
             var failure: Error?
             let saved = change { data -> String? in
                 do { return try data.upsert(id: id, fields: fields) } catch { failure = error; return nil }

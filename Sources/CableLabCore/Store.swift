@@ -85,8 +85,54 @@ public struct CableFields: Equatable, Sendable {
         for path in [\CableFields.name, \.brand, \.ratedData, \.ratedPower, \.length, \.ends, \.looks, \.notes] {
             f[keyPath: path] = f[keyPath: path].trimmingCharacters(in: .whitespacesAndNewlines)
         }
+        f.length = Self.normalizeLength(f.length)
         return f
     }
+
+    // MARK: Automatic name
+
+    /// "Anker 40 Gb/s 240 W cable", built from brand and ratings.
+    public var autoName: String {
+        let parts = [brand, ratedData, ratedPower].map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        return parts.isEmpty ? "New cable" : parts.joined(separator: " ") + " cable"
+    }
+
+    /// True when the name is one Cable Lab made, so it may keep following brand and ratings.
+    public func nameIsAutomatic(before previous: CableFields) -> Bool {
+        let n = name.trimmingCharacters(in: .whitespaces)
+        return n.isEmpty || n == previous.autoName || n == autoName || n.hasPrefix("New ")
+    }
+
+    /// Call after brand or ratings change: an automatic name is rebuilt, a typed one is kept.
+    public mutating func refreshAutoName(previous: CableFields) {
+        if nameIsAutomatic(before: previous) { name = autoName }
+    }
+
+    /// "1M" -> "1 m", "50cm" -> "50 cm", "about 2 m" -> "2 m". Anything else stays as typed.
+    public static func normalizeLength(_ text: String) -> String {
+        var s = text.trimmingCharacters(in: .whitespaces)
+        for prefix in ["about ", "approx. ", "approx ", "~"] where s.lowercased().hasPrefix(prefix) {
+            s = String(s.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
+        }
+        let digits = s.prefix { $0.isNumber || $0 == "." || $0 == "," }
+        guard !digits.isEmpty else { return s }
+        let unit = s.dropFirst(digits.count).trimmingCharacters(in: .whitespaces).lowercased()
+        let units = ["m": "m", "cm": "cm", "mm": "mm", "ft": "ft", "in": "in",
+                     "meter": "m", "meters": "m", "metre": "m", "metres": "m"]
+        guard let u = units[unit] else { return s }
+        return "\(digits.replacingOccurrences(of: ",", with: ".")) \(u)"
+    }
+}
+
+/// Cable brands that put their own USB vendor ID in the e-marker. Many cables report 0 or the chip maker
+/// instead, so this only fills the brand when it is sure.
+public enum CableVendors {
+    static let brands: [Int: String] = [
+        0x05AC: "Apple", 0x291A: "Anker", 0x050D: "Belkin", 0x04E8: "Samsung",
+        0x18D1: "Google", 0x17EF: "Lenovo", 0x413C: "Dell", 0x045E: "Microsoft",
+    ]
+
+    public static func brand(for vendorID: Int) -> String? { brands[vendorID] }
 }
 
 public enum StoreError: LocalizedError, Equatable {
@@ -182,14 +228,18 @@ public struct CableData: Codable, Equatable, Sendable {
         cables[i].emarker = identity
         if cables[i].ratedData.isEmpty { cables[i].ratedData = identity.ratedData }
         if cables[i].ratedPower.isEmpty { cables[i].ratedPower = identity.ratedPower }
-        if cables[i].length.isEmpty { cables[i].length = identity.lengthHint }
+        if cables[i].length.isEmpty { cables[i].length = identity.lengthValue }
     }
 
-    /// Add a cable for an e-marker nobody has seen yet. Returns the new id.
+    /// Add a cable for an e-marker nobody has seen yet, with everything the chip tells us filled in and an
+    /// automatic name. The user only types the brand when the chip does not give it. Returns the new id.
     public mutating func addDetected(_ identity: CableIdentity, date: String) throws -> String {
         var fields = CableFields()
-        fields.name = "New \([identity.ratedData, identity.ratedPower].filter { !$0.isEmpty }.joined(separator: " ")) cable"
-        fields.notes = "Added from its e-marker on \(date). Rename it."
+        fields.brand = CableVendors.brand(for: identity.vendorId) ?? ""
+        fields.ratedData = identity.ratedData
+        fields.ratedPower = identity.ratedPower
+        fields.length = identity.lengthValue
+        fields.name = fields.autoName
         let id = try upsert(id: nil, fields: fields)
         try link(identity, to: id)
         return id

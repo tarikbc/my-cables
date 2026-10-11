@@ -19,7 +19,7 @@ final class ControlCLITests: XCTestCase {
     }
 
     func testRejectsBadUsage() {
-        XCTAssertNotNil(ControlCLI.request(["add", "--brand", "x"]).error)
+        XCTAssertNotNil(ControlCLI.request(["add"]).error)
         XCTAssertNotNil(ControlCLI.request(["edit"]).error)
         XCTAssertNotNil(ControlCLI.request(["remove-result", "x", "y"]).error)
         XCTAssertNotNil(ControlCLI.request(["add", "--name", "x", "--colour", "red"]).error)

@@ -22,7 +22,7 @@
       },
       "ends" : "USB-C to USB-C",
       "id" : "ltt-usb-c-cable",
-      "length" : "1M",
+      "length" : "1 m",
       "looks" : "",
       "name" : "LTT USB-C cable",
       "notes" : "",
@@ -85,7 +85,7 @@
       "brand" : "Insta360",
       "ends" : "USB-C to USB-C",
       "id" : "insta360-x6-cable",
-      "length" : "50cm",
+      "length" : "50 cm",
       "looks" : "",
       "name" : "Insta360 X6 cable",
       "notes" : "Came with the Insta360 X6 camera.",
@@ -190,7 +190,7 @@
       },
       "ends" : "USB-C to USB-C",
       "id" : "new-40-gb-s-240-w-cable",
-      "length" : "1m",
+      "length" : "1 m",
       "looks" : "",
       "name" : "Anker 40 Gb/s 240 W cable",
       "notes" : "",
@@ -248,6 +248,38 @@
           "read_s" : 35.7759,
           "write_s" : 31.5067
         }
+      ]
+    },
+    {
+      "brand" : "Chinese",
+      "emarker" : {
+        "current_a" : 5,
+        "epr" : true,
+        "fw_version" : 0,
+        "hw_version" : 0,
+        "latency_code" : 1,
+        "max_volts" : 20,
+        "product_id" : 0,
+        "product_type" : "passive",
+        "speed_code" : 3,
+        "vdos" : [
+          "18600138",
+          "0000040d",
+          "00000000",
+          "000a2043"
+        ],
+        "vendor_id" : 312
+      },
+      "ends" : "USB-C to USB-C",
+      "id" : "40-gb-s-240-w-cable",
+      "length" : "15 cm",
+      "looks" : "",
+      "name" : "Chinese 40 Gb/s 240 W cable",
+      "notes" : "",
+      "rated_data" : "40 Gb/s",
+      "rated_power" : "240 W",
+      "results" : [
+
       ]
     }
   ]

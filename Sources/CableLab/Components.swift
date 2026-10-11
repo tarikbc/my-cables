@@ -131,7 +131,7 @@ struct DetectedBanner: View {
             return "\(identity.summary). Add it, or use This Is… if you saved it before without an e-marker."
         }
         if detected.isNew {
-            return "\(identity.summary). Rename it, or use This Is… if it is a cable you saved before."
+            return "\(identity.summary). Type the brand and press Return; the name follows. Or use This Is… if you saved it before."
         }
         return "Recognized by its e-marker: \(identity.summary)."
     }

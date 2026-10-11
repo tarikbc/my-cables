@@ -59,6 +59,16 @@ public enum Readme {
         return [e.speedName, e.ratedPower, e.lengthHint].filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
+    /// "Anker · 1 m": what tells cables apart in a drawer.
+    public static func brandAndLength(_ cable: Cable) -> String {
+        [cable.brand, cable.length].filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
+    static func subline(_ cable: Cable) -> String {
+        let text = brandAndLength(cable)
+        return text.isEmpty ? "" : "<br>\(cell(text))"
+    }
+
     public static func rated(_ cable: Cable) -> String {
         [cable.ratedData, cable.ratedPower].filter { !$0.isEmpty }.joined(separator: " · ")
     }
@@ -75,7 +85,7 @@ public enum Readme {
     public static func table(_ data: CableData) -> String {
         let cables = sorted(data.cables)
         let cols = columns(cables)
-        var head = ["#", "Cable", "How to spot it", "Rated", "E-marker says", "Best link"]
+        var head = ["#", "Cable", "Rated", "E-marker says", "Best link"]
         head += cols.map { "\($0.title) (MB/s)" }
         head.append("Verdict")
         var lines = ["| " + head.joined(separator: " | ") + " |",
@@ -83,8 +93,7 @@ public enum Readme {
         for (index, c) in cables.enumerated() {
             var row = [
                 "\(index + 1)",
-                "**\(cell(c.name))**" + (c.brand.isEmpty ? "" : "<br>\(cell(c.brand))"),
-                cell(c.looks),
+                "**\(cell(c.name))**" + subline(c),
                 cell(rated(c)),
                 cell(emarker(c)),
                 c.results.isEmpty ? "–" : USBLink.short(c.bestLink),

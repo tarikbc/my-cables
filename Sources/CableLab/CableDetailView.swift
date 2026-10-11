@@ -8,9 +8,21 @@ struct CableDetailView: View {
 
     @State private var fields = CableFields()
     @State private var confirmDelete = false
+    @FocusState private var focus: Field?
+
+    enum Field { case brand, length, ratedData, ratedPower, name, ends }
 
     private var cable: Cable? { lab.cable(cableID) }
-    private var dirty: Bool { cable.map { CableFields($0) != fields } ?? !fields.name.isEmpty }
+    private var dirty: Bool {
+        if let cable { return CableFields(cable) != fields }
+        return !fields.brand.isEmpty || !fields.ratedData.isEmpty || !fields.name.isEmpty
+    }
+    private var canSave: Bool { dirty && !fields.name.trimmingCharacters(in: .whitespaces).isEmpty }
+
+    /// Brands already in use, for one-click picking.
+    private var knownBrands: [String] {
+        Array(Set(lab.data.cables.map(\.brand).filter { !$0.isEmpty })).sorted { $0.lowercased() < $1.lowercased() }
+    }
 
     var body: some View {
         ScrollView {
@@ -26,7 +38,18 @@ struct CableDetailView: View {
             .frame(maxWidth: 860, alignment: .leading)
         }
         .navigationTitle(cable?.name ?? "New Cable")
-        .onAppear { fields = cable.map(CableFields.init) ?? CableFields() }
+        .onAppear {
+            fields = cable.map(CableFields.init) ?? CableFields()
+            // A cable without a brand (new, or just detected) needs exactly one thing typed: the brand.
+            if fields.brand.isEmpty { DispatchQueue.main.async { focus = .brand } }
+        }
+        .onChange(of: [fields.brand, fields.ratedData, fields.ratedPower]) { old, _ in
+            var previous = fields
+            previous.brand = old[0]
+            previous.ratedData = old[1]
+            previous.ratedPower = old[2]
+            fields.refreshAutoName(previous: previous)
+        }
     }
 
     private var header: some View {
@@ -52,20 +75,33 @@ struct CableDetailView: View {
     private var editor: some View {
         VStack(alignment: .leading, spacing: 12) {
             Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 10) {
-                GridRow { field("Name", "LTT USB-C cable", $fields.name).gridCellColumns(2) }
                 GridRow {
-                    field("Brand", "LTT Store", $fields.brand)
-                    field("Ends", "USB-C to USB-C", $fields.ends)
+                    brandField
+                    field("Length", "1 m", $fields.length, .length)
                 }
                 GridRow {
-                    field("Rated data", "40 Gb/s", $fields.ratedData)
-                    field("Rated power", "240 W", $fields.ratedPower)
+                    field("Rated data", "40 Gb/s", $fields.ratedData, .ratedData)
+                    field("Rated power", "240 W", $fields.ratedPower, .ratedPower)
                 }
                 GridRow {
-                    field("Length", "2 m", $fields.length)
-                    field("How to spot it", "Black braid, orange tip", $fields.looks)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 6) {
+                            Text("Name").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                            if fields.name == fields.autoName {
+                                Text("automatic").font(.caption2).foregroundStyle(.secondary)
+                                    .padding(.horizontal, 6).padding(.vertical, 1)
+                                    .background(Capsule().fill(Color.primary.opacity(0.07)))
+                                    .help("Built from brand and ratings. Type your own name to keep it fixed.")
+                            }
+                        }
+                        TextField("Name", text: $fields.name, prompt: Text(fields.autoName))
+                            .textFieldStyle(.roundedBorder)
+                            .labelsHidden()
+                            .focused($focus, equals: .name)
+                            .onSubmit(saveIfReady)
+                    }
+                    field("Ends", "USB-C to USB-C", $fields.ends, .ends)
                 }
-                GridRow { field("Notes", "Came with the Insta360 X6", $fields.notes).gridCellColumns(2) }
             }
             HStack {
                 if cable != nil {
@@ -78,7 +114,7 @@ struct CableDetailView: View {
                 Button(cable == nil ? "Add Cable" : "Save") { save() }
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut("s", modifiers: .command)
-                    .disabled(!dirty || fields.name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(!canSave)
             }
         }
         .confirmationDialog("Delete “\(cable?.name ?? "")” and all its results?", isPresented: $confirmDelete) {
@@ -89,13 +125,49 @@ struct CableDetailView: View {
         }
     }
 
-    private func field(_ title: String, _ prompt: String, _ text: Binding<String>) -> some View {
+    private var brandField: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Brand").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                TextField("Brand", text: $fields.brand, prompt: Text("Anker"))
+                    .textFieldStyle(.roundedBorder)
+                    .labelsHidden()
+                    .focused($focus, equals: .brand)
+                    .onSubmit(saveIfReady)
+                if !knownBrands.isEmpty {
+                    Menu {
+                        ForEach(knownBrands, id: \.self) { brand in
+                            Button(brand) {
+                                fields.brand = brand
+                                focus = .brand
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "chevron.down")
+                    }
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .fixedSize()
+                    .help("Pick a brand you used before")
+                }
+            }
+        }
+    }
+
+    private func field(_ title: String, _ prompt: String, _ text: Binding<String>, _ which: Field) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
             TextField(title, text: text, prompt: Text(prompt))
                 .textFieldStyle(.roundedBorder)
                 .labelsHidden()
+                .focused($focus, equals: which)
+                .onSubmit(saveIfReady)
         }
+    }
+
+    /// Return in any field saves, so adding a cable is: type the brand, press Return.
+    private func saveIfReady() {
+        if canSave { save() }
     }
 
     private func save() {

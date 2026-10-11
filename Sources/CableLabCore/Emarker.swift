@@ -53,6 +53,15 @@ public struct CableIdentity: Codable, Hashable, Sendable {
         return "\(volts * currentA) W"
     }
 
+    /// The length for the Length field: "1 m", "3 m", "over 7 m".
+    public var lengthValue: String {
+        switch latencyCode {
+        case 1...7: return "\(latencyCode) m"
+        case 8: return "over 7 m"
+        default: return ""
+        }
+    }
+
     public var lengthHint: String {
         switch latencyCode {
         case 1: return "about 1 m"

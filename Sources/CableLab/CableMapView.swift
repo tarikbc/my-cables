@@ -134,7 +134,7 @@ private struct CableCard: View {
                     Text(cable.name).font(.title3.weight(.semibold)).lineLimit(1)
                     LinkBadge(bps: cable.bestLink, untested: cable.results.isEmpty)
                 }
-                let sub = [cable.brand, cable.length, cable.looks].filter { !$0.isEmpty }.joined(separator: " · ")
+                let sub = Readme.brandAndLength(cable)
                 if !sub.isEmpty {
                     Text(sub).font(.callout).foregroundStyle(.secondary).lineLimit(1)
                 }

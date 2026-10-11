@@ -153,7 +153,7 @@ public enum ControlCLI {
       state                         Devices, cables and the current job, in one answer
       devices                       Connected devices with their USB link (read again now)
       cables                        Every cable with every result
-      add --name NAME [fields]      Add a cable
+      add --brand BRAND [fields]    Add a cable (the name builds itself unless you pass --name)
       edit CABLE [fields]           Change only the given fields of a cable
       test CABLE [--device DEVICE] [--wait]
                                     Start a test. With one device connected, --device is optional.
@@ -211,7 +211,7 @@ public enum ControlCLI {
         case "job":
             return (["cmd": "job"], wait, nil)
         case "add":
-            guard fields["name"] != nil else { return (nil, false, "add needs --name.") }
+            guard !fields.isEmpty else { return (nil, false, "add needs at least --brand or --name.") }
             return (["cmd": "add", "args": ["fields": fields]], false, nil)
         case "edit":
             guard positional.count == 1 else { return (nil, false, "usage: cablectl edit CABLE [fields]") }
