@@ -1,0 +1,6 @@
+#!/bin/sh
+# Build Cable Lab from this repo and open it.
+set -eu
+cd "$(dirname "$0")"
+scripts/build-app.sh
+open "build/Cable Lab.app"

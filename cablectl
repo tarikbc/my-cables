@@ -1,0 +1,3 @@
+#!/bin/sh
+# Drive the running Cable Lab app from a terminal (or from an agent). Run `./cablectl help`.
+exec "$(dirname "$0")/build/Cable Lab.app/Contents/MacOS/CableLab" ctl "$@"

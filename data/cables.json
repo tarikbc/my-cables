@@ -1,0 +1,111 @@
+{
+  "cables" : [
+    {
+      "brand" : "LTT Store",
+      "emarker" : {
+        "current_a" : 5,
+        "epr" : true,
+        "fw_version" : 1,
+        "hw_version" : 1,
+        "latency_code" : 1,
+        "max_volts" : 50,
+        "product_id" : 0,
+        "product_type" : "passive",
+        "speed_code" : 3,
+        "vdos" : [
+          "1c600000",
+          "00000000",
+          "00000000",
+          "110a2e43"
+        ],
+        "vendor_id" : 0
+      },
+      "ends" : "USB-C to USB-C",
+      "id" : "ltt-usb-c-cable",
+      "length" : "1M",
+      "looks" : "",
+      "name" : "LTT USB-C cable",
+      "notes" : "",
+      "rated_data" : "40 Gb/s",
+      "rated_power" : "240 W",
+      "results" : [
+        {
+          "bytes" : 1073741824,
+          "date" : "2026-10-11",
+          "endpoint" : "AYN Thor",
+          "host" : "Mac15,9",
+          "kind" : "adb",
+          "link_bps" : 10000000000,
+          "read_s" : 2.4604,
+          "write_s" : 2.2432
+        },
+        {
+          "bytes" : 1073741824,
+          "date" : "2026-10-11",
+          "endpoint" : "AYN Thor",
+          "host" : "Mac15,9",
+          "kind" : "adb",
+          "link_bps" : 10000000000,
+          "read_s" : 2.4976,
+          "write_s" : 2.3283
+        },
+        {
+          "bytes" : 4294967296,
+          "date" : "2026-10-11",
+          "endpoint" : "Samsung PSSD T7 Shield",
+          "host" : "Mac15,9",
+          "kind" : "disk",
+          "link_bps" : 10000000000,
+          "read_s" : 5.1856,
+          "write_s" : 5.0362
+        }
+      ]
+    },
+    {
+      "brand" : "Insta360",
+      "ends" : "USB-C to USB-C",
+      "id" : "insta360-x6-cable",
+      "length" : "50cm",
+      "looks" : "",
+      "name" : "Insta360 X6 cable",
+      "notes" : "Came with the Insta360 X6 camera.",
+      "rated_data" : "",
+      "rated_power" : "",
+      "results" : [
+        {
+          "bytes" : 1073741824,
+          "date" : "2026-10-11",
+          "endpoint" : "AYN Thor",
+          "host" : "Mac15,9",
+          "kind" : "adb",
+          "link_bps" : 10000000000,
+          "read_s" : 2.4776,
+          "write_s" : 2.2397
+        }
+      ]
+    },
+    {
+      "brand" : "AYN",
+      "ends" : "USB-C to USB-C",
+      "id" : "ayn-thor-stock-cable",
+      "length" : "",
+      "looks" : "",
+      "name" : "AYN Thor stock cable",
+      "notes" : "Came in the AYN Thor box.",
+      "rated_data" : "",
+      "rated_power" : "",
+      "results" : [
+        {
+          "bytes" : 1073741824,
+          "date" : "2026-10-11",
+          "endpoint" : "AYN Thor",
+          "host" : "Mac15,9",
+          "kind" : "adb",
+          "link_bps" : 480000000,
+          "read_s" : 24.381,
+          "write_s" : 27.234
+        }
+      ]
+    }
+  ]
+}
