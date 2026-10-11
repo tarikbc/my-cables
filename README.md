@@ -66,8 +66,9 @@ The e-marker identifies a cable model, not one cable. Two cables of the same mod
 
 A Time Machine disk's top folder belongs to root, so you cannot create a file there. Cable Lab asks
 for your Mac password in its own sheet and uses `sudo -S` for three fixed Apple tools only:
-`/usr/bin/touch` and `/usr/sbin/chown -h` create an empty test file that you own, and `/bin/rm`
-removes it at the end. It does this only when the top folder is owned by root and not writable by you. The
+`/usr/bin/mktemp` creates a new, randomly named empty file (it never follows a symlink),
+`/usr/sbin/chown -h` hands it to you, and `/bin/rm`
+removes it at the end. Each step stays inside the mounted volume, even if someone swaps the volume. The
 benchmark itself always runs as you, inside the app. Cable Lab never runs its own binary as root,
 because that binary sits in a folder your user can write, and a swapped copy would then run as root.
 

@@ -190,9 +190,32 @@ final class BenchTests: XCTestCase {
     }
 
     func testRootOnlyRunsFixedSystemTools() {
-        XCTAssertEqual(Bench.rootCreate, "/usr/bin/touch")
+        XCTAssertEqual(Bench.rootCreate, "/usr/bin/mktemp")
         XCTAssertEqual(Bench.rootChown, "/usr/sbin/chown")
         XCTAssertEqual(Bench.rootRemove, "/bin/rm")
+    }
+
+    func testAcceptsOnlyOurMktempPath() {
+        let mount = "/Volumes/Time Machine"
+        XCTAssertTrue(Bench.isOurTempFile("/Volumes/Time Machine/.my-cables-bench.Ab3dE9xZ", in: mount))
+        XCTAssertFalse(Bench.isOurTempFile("/Volumes/Time Machine/.my-cables-bench.Ab3dE9x", in: mount))
+        XCTAssertFalse(Bench.isOurTempFile("/Volumes/Time Machine/.my-cables-bench.Ab/../../x", in: mount))
+        XCTAssertFalse(Bench.isOurTempFile("/etc/sudoers", in: mount))
+        XCTAssertFalse(Bench.isOurTempFile("/Volumes/Time Machine/sub/.my-cables-bench.Ab3dE9xZ", in: mount))
+    }
+
+    func testMktempNeverFollowsASymlink() throws {
+        // What root runs, tried as the user: a template in a folder never resolves through a symlink.
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("mk-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let out = try Shell.run(Bench.rootCreate, [dir.appendingPathComponent(Bench.rootTemplatePrefix + "XXXXXXXX").path])
+        let created = out.out.trimmingCharacters(in: .whitespacesAndNewlines)
+        XCTAssertTrue(Bench.isOurTempFile(created, in: dir.path))
+        var info = stat()
+        XCTAssertEqual(lstat(created, &info), 0)
+        XCTAssertEqual(info.st_mode & S_IFMT, S_IFREG)
+        XCTAssertEqual(info.st_size, 0)
     }
 
     func testSudoOnlyForRootOwnedFoldersWeCannotWrite() {

@@ -47,9 +47,14 @@ public enum Bench {
 
     /// Root only ever runs these two Apple tools from the sealed system volume, never Cable Lab's own
     /// binary (which lives in a folder the user can write). The benchmark itself always runs as the user.
-    static let rootCreate = "/usr/bin/touch"
+    ///
+    /// Each root step is safe even if someone swaps the volume for one they control: mktemp creates a new
+    /// random name with O_EXCL (a symlink there makes it fail), and chown -h / rm -f act on that exact
+    /// entry without following it. So root never writes outside the mounted volume.
+    static let rootCreate = "/usr/bin/mktemp"
     static let rootChown = "/usr/sbin/chown"
     static let rootRemove = "/bin/rm"
+    static let rootTemplatePrefix = ".my-cables-bench."
 
     /// Runs the benchmark as the current user. When `password` is given, sudo first creates an empty
     /// test file owned by the user in the root-owned top folder, and removes it at the end.
@@ -70,16 +75,28 @@ public enum Bench {
             say("Writing then reading \(size / gib) GiB on “\(volume)”.")
             return try runBench(path: path, bytes: size, existing: false)
         }
-        // Only a folder that root owns and this user cannot write is safe: nobody else running as this
-        // user can then put a symlink at `path` between the sudo steps.
+        // A sanity check, not the security boundary (the volume can change after it): sudo is only
+        // meant for a top folder that root owns and this user cannot write.
         guard rootOnlyFolder(mount) else {
             throw BenchError.failed("The top folder of “\(volume)” is not owned by root only, so Cable Lab will not use sudo on it.")
         }
         say("sudo creates an empty test file on “\(volume)” for you. Then Cable Lab writes and reads \(size / gib) GiB.")
-        defer { _ = try? sudo(password, [rootRemove, "-f", "--", path]) }
-        try sudo(password, [rootCreate, path])
-        try sudo(password, [rootChown, "-h", String(getuid()), path])
-        return try runBench(path: path, bytes: size, existing: true)
+        let template = (mount as NSString).appendingPathComponent(rootTemplatePrefix + "XXXXXXXX")
+        let created = try sudo(password, [rootCreate, template]).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isOurTempFile(created, in: mount) else {
+            throw BenchError.failed("mktemp returned an unexpected path. Test stopped.")
+        }
+        defer { _ = try? sudo(password, [rootRemove, "-f", "--", created]) }
+        try sudo(password, [rootChown, "-h", "--", String(getuid()), created])
+        return try runBench(path: created, bytes: size, existing: true)
+    }
+
+    /// The path mktemp printed must be our template in the mount's top folder, with 8 random characters.
+    static func isOurTempFile(_ path: String, in mount: String) -> Bool {
+        let prefix = (mount as NSString).appendingPathComponent(rootTemplatePrefix)
+        guard path.hasPrefix(prefix) else { return false }
+        let suffix = path.dropFirst(prefix.count)
+        return suffix.count == 8 && suffix.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber) }
     }
 
     static func rootOnlyFolder(_ path: String) -> Bool {
@@ -97,10 +114,12 @@ public enum Bench {
     }
 
     /// Run one fixed system command as root. The password goes to sudo on stdin, never on the command line.
-    static func sudo(_ password: String, _ command: [String]) throws {
+    @discardableResult
+    static func sudo(_ password: String, _ command: [String]) throws -> String {
         let out = try Shell.run("/usr/bin/sudo", ["-S", "-k", "-p", ""] + command,
                                 input: Data((password + "\n").utf8), timeout: 120)
         guard out.status == 0 else { throw classify(out.err) }
+        return out.out
     }
 
     static func classify(_ stderr: String) -> BenchError {
