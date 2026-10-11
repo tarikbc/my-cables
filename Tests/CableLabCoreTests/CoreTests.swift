@@ -129,7 +129,7 @@ final class ReadmeTests: XCTestCase {
         let lines = Readme.table(data).split(separator: "\n").map(String.init)
         XCTAssertTrue(lines[0].contains("AYN Thor push / pull (MB/s)"))
         XCTAssertTrue(lines[0].contains("Samsung T7 write / read (MB/s)"))
-        XCTAssertTrue(lines[2].hasPrefix("| **LTT**"))
+        XCTAssertTrue(lines[2].hasPrefix("| 1 | **LTT**"))
         XCTAssertTrue(lines[2].contains("| 500 / 417 |"))
         XCTAssertTrue(lines[2].contains("| 800 / 800 |"))
         XCTAssertTrue(lines[2].contains("40 Gb/s · 240 W"))
@@ -140,7 +140,7 @@ final class ReadmeTests: XCTestCase {
     func testRenderReplacesOnlyBetweenMarkers() throws {
         let text = "intro\n\(Readme.start)\nold\n\(Readme.end)\noutro\n"
         let out = try Readme.render(data, into: text)
-        XCTAssertTrue(out.hasPrefix("intro\n\(Readme.start)\n| Cable"))
+        XCTAssertTrue(out.hasPrefix("intro\n\(Readme.start)\n| # | Cable"))
         XCTAssertTrue(out.hasSuffix("\(Readme.end)\noutro\n"))
         XCTAssertFalse(out.contains("old"))
         XCTAssertThrowsError(try Readme.render(data, into: "no markers"))

@@ -9,7 +9,13 @@ public enum Readme {
         public let endpoint: String
         public let kind: String
 
-        public var title: String { "\(endpoint) \(Readme.words(kind).joined(separator: " / "))" }
+        public var title: String { "\(device) \(Readme.words(kind).joined(separator: " / "))" }
+        /// A shorter device name for headings ("Samsung PSSD T7 Shield" -> "Samsung T7 Shield").
+        public var device: String { Readme.shortDevice(endpoint) }
+    }
+
+    public static func shortDevice(_ label: String) -> String {
+        label.replacingOccurrences(of: "PSSD ", with: "")
     }
 
     public static func words(_ kind: String) -> [String] {
@@ -24,12 +30,9 @@ public enum Readme {
         return "Full \(USBLink.short(top)) data."
     }
 
-    /// Fastest link first, then by name.
+    /// Best cable first. See Ranking for the rules.
     public static func sorted(_ cables: [Cable]) -> [Cable] {
-        cables.sorted {
-            let a = $0.bestLink ?? 0, b = $1.bestLink ?? 0
-            return a != b ? a > b : $0.name.lowercased() < $1.name.lowercased()
-        }
+        Ranking.ranked(cables)
     }
 
     public static func columns(_ cables: [Cable]) -> [Column] {
@@ -72,13 +75,14 @@ public enum Readme {
     public static func table(_ data: CableData) -> String {
         let cables = sorted(data.cables)
         let cols = columns(cables)
-        var head = ["Cable", "How to spot it", "Rated", "E-marker says", "Best link"]
+        var head = ["#", "Cable", "How to spot it", "Rated", "E-marker says", "Best link"]
         head += cols.map { "\($0.title) (MB/s)" }
         head.append("Verdict")
         var lines = ["| " + head.joined(separator: " | ") + " |",
                      "|" + String(repeating: "---|", count: head.count)]
-        for c in cables {
+        for (index, c) in cables.enumerated() {
             var row = [
+                "\(index + 1)",
                 "**\(cell(c.name))**" + (c.brand.isEmpty ? "" : "<br>\(cell(c.brand))"),
                 cell(c.looks),
                 cell(rated(c)),

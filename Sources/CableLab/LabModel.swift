@@ -51,6 +51,7 @@ final class LabModel: ObservableObject {
     @Published var detected: DetectedCable?
     private var seenConnections: Set<String>?
     private var ignoredFingerprints: Set<String> = []
+    private var waitingForEmarker: [String: Date] = [:]
 
     let host = HostInfo.model()
     var control: ControlServer?
@@ -160,17 +161,40 @@ final class LabModel: ObservableObject {
     // MARK: Cable detection
 
     /// React to plug-ins that happen while the app runs. Connections present at launch count as seen.
+    /// How long a new connection may stay without an e-marker before Cable Lab says it has none. The Mac
+    /// reports the plug-in at once, but reads the cable's chip (USB PD Discover Identity) a little later.
+    static let emarkerGrace: TimeInterval = 8
+
     private func noticeConnections(_ ports: [USBCPort]) {
         let live = ports.filter(\.connected)
         let ids = Set(live.map(\.connectionId))
         if let seen = seenConnections {
-            // A plug-in while the app runs: add an unknown e-marked cable right away.
+            // A plug-in while the app runs: judge it now if the chip already answered, else wait for it.
             for port in live where !seen.contains(port.connectionId) {
+                if port.cable != nil { detect(port) } else { waitingForEmarker[port.connectionId] = Date() }
+            }
+        }
+        for (id, since) in waitingForEmarker {
+            guard let port = live.first(where: { $0.connectionId == id }) else {
+                waitingForEmarker[id] = nil  // Unplugged before the chip answered.
+                continue
+            }
+            if port.cable != nil || Date().timeIntervalSince(since) > Self.emarkerGrace {
+                waitingForEmarker[id] = nil
                 detect(port)
             }
         }
+        // A "no e-marker" banner whose port has since answered: show the real cable instead.
+        if let d = detected, d.identity == nil, let port = live.first(where: { $0.number == d.port }), port.cable != nil {
+            detected = nil
+            detect(port)
+        }
         seenConnections = ids
         suggestUnsaved(live)
+        if !waitingForEmarker.isEmpty {
+            // Look again soon instead of on the slow 3 s tick.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in self?.refreshEndpoints() }
+        }
     }
 
     /// Any e-marked cable that no saved cable matches gets a suggestion, also when it was plugged in

@@ -126,6 +126,129 @@
           "write_s" : 27.234
         }
       ]
+    },
+    {
+      "brand" : "Aohi",
+      "emarker" : {
+        "current_a" : 5,
+        "epr" : true,
+        "fw_version" : 0,
+        "hw_version" : 0,
+        "latency_code" : 2,
+        "max_volts" : 50,
+        "product_id" : 0,
+        "product_type" : "passive",
+        "speed_code" : 0,
+        "vdos" : [
+          "18600000",
+          "00000000",
+          "00000000",
+          "000a4640"
+        ],
+        "vendor_id" : 0
+      },
+      "ends" : "USB-C to USB-C",
+      "id" : "new-480-mb-s-240-w-cable",
+      "length" : "1 m",
+      "looks" : "",
+      "name" : "Aohi 480 Mb/s 140 W cable",
+      "notes" : "",
+      "rated_data" : "480 Mb/s",
+      "rated_power" : "140 W",
+      "results" : [
+        {
+          "bytes" : 1073741824,
+          "date" : "2026-10-11",
+          "endpoint" : "Samsung PSSD T7 Shield",
+          "host" : "Mac15,9",
+          "kind" : "disk",
+          "link_bps" : 480000000,
+          "read_s" : 31.6876,
+          "write_s" : 30.2754
+        }
+      ]
+    },
+    {
+      "brand" : "Anker",
+      "emarker" : {
+        "current_a" : 5,
+        "epr" : true,
+        "fw_version" : 1,
+        "hw_version" : 1,
+        "latency_code" : 1,
+        "max_volts" : 50,
+        "product_id" : 33927,
+        "product_type" : "passive",
+        "speed_code" : 3,
+        "vdos" : [
+          "1860291a",
+          "0000219c",
+          "84870200",
+          "110a2e43"
+        ],
+        "vendor_id" : 10522
+      },
+      "ends" : "USB-C to USB-C",
+      "id" : "new-40-gb-s-240-w-cable",
+      "length" : "1m",
+      "looks" : "",
+      "name" : "Anker 40 Gb/s 240 W cable",
+      "notes" : "",
+      "rated_data" : "40 Gb/s",
+      "rated_power" : "240 W",
+      "results" : [
+        {
+          "bytes" : 4294967296,
+          "date" : "2026-10-11",
+          "endpoint" : "Samsung PSSD T7 Shield",
+          "host" : "Mac15,9",
+          "kind" : "disk",
+          "link_bps" : 10000000000,
+          "read_s" : 5.2179,
+          "write_s" : 8.0878
+        }
+      ]
+    },
+    {
+      "brand" : "Baseus",
+      "emarker" : {
+        "current_a" : 5,
+        "epr" : true,
+        "fw_version" : 0,
+        "hw_version" : 0,
+        "latency_code" : 3,
+        "max_volts" : 50,
+        "product_id" : 0,
+        "product_type" : "passive",
+        "speed_code" : 0,
+        "vdos" : [
+          "18002e99",
+          "00000000",
+          "00000000",
+          "000a6640"
+        ],
+        "vendor_id" : 11929
+      },
+      "ends" : "USB-C to USB-C",
+      "id" : "new-480-mb-s-240-w-cable-2",
+      "length" : "3 m",
+      "looks" : "",
+      "name" : "Baseus 480 Mb/s 240 W cable",
+      "notes" : "",
+      "rated_data" : "480 Mb/s",
+      "rated_power" : "240 W",
+      "results" : [
+        {
+          "bytes" : 1073741824,
+          "date" : "2026-10-11",
+          "endpoint" : "Samsung PSSD T7 Shield",
+          "host" : "Mac15,9",
+          "kind" : "disk",
+          "link_bps" : 480000000,
+          "read_s" : 35.7759,
+          "write_s" : 31.5067
+        }
+      ]
     }
   ]
 }

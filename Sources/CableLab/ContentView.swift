@@ -62,7 +62,7 @@ struct ContentView: View {
                 Label("Cable Map", systemImage: "tablecells").tag(SidebarItem.map)
             }
             Section("Cables") {
-                ForEach(lab.data.cables) { cable in
+                ForEach(Ranking.ranked(lab.data.cables)) { cable in
                     CableRow(cable: cable).tag(SidebarItem.cable(cable.id))
                 }
                 if lab.data.cables.isEmpty {

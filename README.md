@@ -8,11 +8,14 @@ records what each of my cables actually does when it sits between my Mac and a r
 ## The map
 
 <!-- cables:start -->
-| Cable | How to spot it | Rated | E-marker says | Best link | AYN Thor push / pull (MB/s) | Samsung PSSD T7 Shield write / read (MB/s) | Verdict |
-|---|---|---|---|---|---|---|---|
-| **Insta360 X6 cable**<br>Insta360 | – | – | – | 10 Gb/s | 479 / 433 | – | Full 10 Gb/s data. |
-| **LTT USB-C cable**<br>LTT Store | – | 40 Gb/s · 240 W | USB4 Gen 3 · 240 W · about 1 m | 10 Gb/s | 479 / 436 | 855 / 820 | Full 10 Gb/s data. |
-| **AYN Thor stock cable**<br>AYN | – | – | – | 480 Mb/s | 39 / 44 | – | USB 2.0 only. Charging and slow data. |
+| # | Cable | How to spot it | Rated | E-marker says | Best link | AYN Thor push / pull (MB/s) | Samsung T7 Shield write / read (MB/s) | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 1 | **LTT USB-C cable**<br>LTT Store | – | 40 Gb/s · 240 W | USB4 Gen 3 · 240 W · about 1 m | 10 Gb/s | 479 / 436 | 855 / 820 | Full 10 Gb/s data. |
+| 2 | **Anker 40 Gb/s 240 W cable**<br>Anker | – | 40 Gb/s · 240 W | USB4 Gen 3 · 240 W · about 1 m | 10 Gb/s | – | 531 / 823 | Full 10 Gb/s data. |
+| 3 | **Insta360 X6 cable**<br>Insta360 | – | – | – | 10 Gb/s | 479 / 433 | – | Full 10 Gb/s data. |
+| 4 | **Aohi 480 Mb/s 140 W cable**<br>Aohi | – | 480 Mb/s · 140 W | USB 2.0 · 240 W · about 2 m | 480 Mb/s | – | 35 / 34 | USB 2.0 only. Charging and slow data. |
+| 5 | **Baseus 480 Mb/s 240 W cable**<br>Baseus | – | 480 Mb/s · 240 W | USB 2.0 · 240 W · about 3 m | 480 Mb/s | – | 34 / 30 | USB 2.0 only. Charging and slow data. |
+| 6 | **AYN Thor stock cable**<br>AYN | – | – | – | 480 Mb/s | 39 / 44 | – | USB 2.0 only. Charging and slow data. |
 <!-- cables:end -->
 
 MB/s means 1,000,000 bytes per second. Each cell shows the best run for that cable and device.
