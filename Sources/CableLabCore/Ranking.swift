@@ -8,17 +8,21 @@ import Foundation
 /// 5. name.
 public enum Ranking {
     /// "40 Gb/s", "10Gbps", "480 Mb/s" -> bits per second.
+    /// Typed ratings come from the data file too, so a silly value must give nil, never a crash.
     public static func dataRate(_ text: String) -> Int64? {
         guard let (value, rest) = leadingNumber(text) else { return nil }
         let unit = rest.lowercased()
-        if unit.hasPrefix("g") { return Int64(value * 1e9) }
-        if unit.hasPrefix("m") { return Int64(value * 1e6) }
-        return nil
+        let multiplier: Double
+        if unit.hasPrefix("g") { multiplier = 1e9 } else if unit.hasPrefix("m") { multiplier = 1e6 } else { return nil }
+        let bps = value * multiplier
+        guard bps.isFinite, bps >= 0, bps < 1e15 else { return nil }  // 1 Pb/s is far past any cable.
+        return Int64(bps)
     }
 
     /// "240 W", "100W" -> watts.
     public static func watts(_ text: String) -> Int? {
-        guard let (value, rest) = leadingNumber(text), rest.lowercased().hasPrefix("w") else { return nil }
+        guard let (value, rest) = leadingNumber(text), rest.lowercased().hasPrefix("w"),
+              value.isFinite, value >= 0, value < 100_000 else { return nil }
         return Int(value)
     }
 

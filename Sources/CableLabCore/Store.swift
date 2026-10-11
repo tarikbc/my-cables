@@ -24,8 +24,26 @@ public struct CableResult: Codable, Hashable, Sendable {
         self.readS = readS
     }
 
-    public var writeMBps: Double { Double(bytes) / writeS / 1e6 }
-    public var readMBps: Double { Double(bytes) / readS / 1e6 }
+    public var writeMBps: Double { Self.rate(bytes, writeS) }
+    public var readMBps: Double { Self.rate(bytes, readS) }
+
+    /// MB/s, or 0 for a run with no bytes or no valid time (a hand-edited data file can hold anything).
+    static func rate(_ bytes: Int64, _ seconds: Double) -> Double {
+        guard bytes > 0, seconds.isFinite, seconds > 0 else { return 0 }
+        let value = Double(bytes) / seconds / 1e6
+        return value.isFinite ? value : 0
+    }
+}
+
+public extension Double {
+    /// Round to an Int without trapping: NaN and infinity give 0, and huge values are clamped.
+    var safeRoundedInt: Int {
+        guard isFinite else { return 0 }
+        let r = rounded()
+        if r >= Double(Int.max) { return Int.max }
+        if r <= Double(Int.min) { return Int.min }
+        return Int(r)
+    }
 }
 
 public struct Cable: Codable, Hashable, Identifiable, Sendable {

@@ -12,6 +12,30 @@ final class RankingTests: XCTestCase {
         XCTAssertNil(Ranking.watts("240"))
     }
 
+    func testHostileValuesNeverTrap() {
+        XCTAssertNil(Ranking.dataRate("99999999999999999999999 Gb/s"))
+        XCTAssertNil(Ranking.dataRate("1e400 Gb/s"))
+        XCTAssertNil(Ranking.watts("99999999999999999999 W"))
+        var zero = result("T7", "disk", 10_000_000_000, 0, -1)
+        XCTAssertEqual(zero.writeMBps, 0)
+        XCTAssertEqual(zero.readMBps, 0)
+        zero.bytes = 0
+        XCTAssertEqual(zero.writeMBps, 0)
+        XCTAssertEqual(Double.infinity.safeRoundedInt, 0)
+        XCTAssertEqual(Double.nan.safeRoundedInt, 0)
+        XCTAssertEqual(1e300.safeRoundedInt, Int.max)
+        XCTAssertEqual((-1e300).safeRoundedInt, Int.min)
+        XCTAssertEqual(854.6.safeRoundedInt, 855)
+        // A cable with a broken run still ranks, after the healthy one.
+        var broken = Cable(id: "b", name: "Broken")
+        broken.ratedData = "99999999999999999999999 Gb/s"
+        broken.results = [result("T7", "disk", 10_000_000_000, 0, 0)]
+        var good = Cable(id: "g", name: "Good")
+        good.results = [result("T7", "disk", 10_000_000_000, 1, 1)]
+        XCTAssertEqual(Ranking.ranked([broken, good]).map(\.name), ["Good", "Broken"])
+        XCTAssertFalse(Readme.table(CableData(cables: [broken, good])).isEmpty)
+    }
+
     func emarker(speed: Int) -> CableIdentity {
         CableIdentity(vendorId: 0, productId: 0, productType: "passive", speedCode: speed, currentA: 5,
                       maxVolts: 50, epr: true, latencyCode: 1, hwVersion: 0, fwVersion: 0, vdos: ["\(speed)"])

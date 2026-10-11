@@ -209,7 +209,7 @@ private struct MeasureBlock: View {
                 }
             }
             .frame(height: 8)
-            Text("\(Int(value.rounded())) MB/s")
+            Text("\(value.safeRoundedInt) MB/s")
                 .font(.caption.monospacedDigit())
                 .frame(width: 70, alignment: .trailing)
         }

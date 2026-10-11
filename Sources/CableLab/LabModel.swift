@@ -381,8 +381,8 @@ final class LabModel: ObservableObject {
             return
         }
         let words = Readme.words(result.kind)
-        say("Saved. \(Int(result.writeMBps.rounded())) MB/s \(words[0]), "
-            + "\(Int(result.readMBps.rounded())) MB/s \(words[1]).")
+        say("Saved. \(result.writeMBps.safeRoundedInt) MB/s \(words[0]), "
+            + "\(result.readMBps.safeRoundedInt) MB/s \(words[1]).")
         job.state = .done(result)
         refreshEndpoints()
     }

@@ -205,8 +205,8 @@ extension LabModel {
         case .done(let result):
             out["state"] = "done"
             out["result"] = Control.object(result)
-            out["write_mbps"] = Int(result.writeMBps.rounded())
-            out["read_mbps"] = Int(result.readMBps.rounded())
+            out["write_mbps"] = result.writeMBps.safeRoundedInt
+            out["read_mbps"] = result.readMBps.safeRoundedInt
         case .failed(let message):
             out["state"] = "failed"
             out["error"] = message
