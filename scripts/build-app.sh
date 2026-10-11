@@ -18,6 +18,12 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/CableLab"
 
+# SwiftPM records the deployment target (14.0) as the SDK version too. AppKit reads that field to pick
+# the design, so an "SDK 14" app gets the old flat look and its layout quirks. Record the real SDK.
+SDK_VERSION="$(xcrun --show-sdk-version)"
+xcrun vtool -set-build-version macos 14.0 "$SDK_VERSION" -replace \
+    -output "$APP/Contents/MacOS/CableLab" "$APP/Contents/MacOS/CableLab"
+
 PLIST="$APP/Contents/Info.plist"
 cat > "$PLIST" <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>

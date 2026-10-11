@@ -26,6 +26,8 @@ struct DetectedCable: Equatable {
     /// The saved cable it matched, or the one Cable Lab just added.
     let cableID: String?
     let isNew: Bool
+    /// An unsaved e-marked cable that was already plugged in: offer to add it, do not add it silently.
+    var isSuggestion = false
 }
 
 struct PasswordRequest: Identifiable {
@@ -48,6 +50,7 @@ final class LabModel: ObservableObject {
     @Published private(set) var ports: [USBCPort] = []
     @Published var detected: DetectedCable?
     private var seenConnections: Set<String>?
+    private var ignoredFingerprints: Set<String> = []
 
     let host = HostInfo.model()
     var control: ControlServer?
@@ -160,14 +163,53 @@ final class LabModel: ObservableObject {
     private func noticeConnections(_ ports: [USBCPort]) {
         let live = ports.filter(\.connected)
         let ids = Set(live.map(\.connectionId))
-        guard let seen = seenConnections else {
-            seenConnections = ids
-            return
-        }
-        for port in live where !seen.contains(port.connectionId) {
-            detect(port)
+        if let seen = seenConnections {
+            // A plug-in while the app runs: add an unknown e-marked cable right away.
+            for port in live where !seen.contains(port.connectionId) {
+                detect(port)
+            }
         }
         seenConnections = ids
+        suggestUnsaved(live)
+    }
+
+    /// Any e-marked cable that no saved cable matches gets a suggestion, also when it was plugged in
+    /// before launch or stayed in the Mac while the device on the far end changed.
+    private func suggestUnsaved(_ live: [USBCPort]) {
+        guard detected == nil else { return }
+        for port in live {
+            guard let identity = port.cable, data.cable(matching: identity) == nil,
+                  !ignoredFingerprints.contains(identity.fingerprint) else { continue }
+            detected = DetectedCable(port: port.number, partner: nil, identity: identity,
+                                     cableID: nil, isNew: false, isSuggestion: true)
+            return
+        }
+    }
+
+    /// Add the suggested cable from its e-marker.
+    func addSuggested() {
+        guard let d = detected, let identity = d.identity else { return }
+        let date = Self.today()
+        guard let newID = change({ try $0.addDetected(identity, date: date) }) else { return }
+        detected = DetectedCable(port: d.port, partner: nil, identity: identity, cableID: newID, isNew: true)
+        selection = .cable(newID)
+    }
+
+    /// The saved cable that matches the e-marker on an endpoint's port, if the e-marker belongs to another
+    /// cable than `cableID` (or `cableID` has a different e-marker). Nil when the test can go ahead.
+    func cableMismatch(cableID: String, endpoint: Endpoint) -> String? {
+        guard let selected = cable(cableID) else { return nil }
+        let onPort = endpoint.cable
+        if let saved = selected.emarker, saved.fingerprint != onPort?.fingerprint {
+            let what = onPort.map { "Its e-marker says \($0.summary)." } ?? "It has no e-marker."
+            return "The cable on port \(endpoint.port.map(String.init) ?? "?") is not “\(selected.name)”. \(what) "
+                + "Plug in the right cable, or pick the cable that is plugged in."
+        }
+        if let onPort, let other = data.cable(matching: onPort), other.id != cableID {
+            return "The cable on port \(endpoint.port.map(String.init) ?? "?") is “\(other.name)” by its e-marker, "
+                + "not “\(selected.name)”. Pick “\(other.name)”, or plug in the right cable."
+        }
+        return nil
     }
 
     private func detect(_ port: USBCPort) {
@@ -202,7 +244,9 @@ final class LabModel: ObservableObject {
         detected = nil
     }
 
+    /// Close the banner. A suggestion that is dismissed is not offered again until the app restarts.
     func dismissDetected() {
+        if let d = detected, d.isSuggestion, let fp = d.identity?.fingerprint { ignoredFingerprints.insert(fp) }
         detected = nil
     }
 
@@ -211,7 +255,11 @@ final class LabModel: ObservableObject {
     func startTest(cableID: String, endpointID: String) {
         guard !job.isRunning, let ep = endpoints.first(where: { $0.id == endpointID }) else { return }
         job = Job(cableID: cableID, state: .running, steps: ["\(ep.label) linked at \(USBLink.name(ep.linkBps))."])
-        // Check before the password prompt, so nobody types a password for a test that cannot run.
+        // Checks before the password prompt, so nobody types a password for a test that cannot run.
+        if let mismatch = cableMismatch(cableID: cableID, endpoint: ep) {
+            job.state = .failed(mismatch)
+            return
+        }
         if ep.isTimeMachine && Discovery.timeMachineRunning() {
             job.state = .failed(BenchError.backupRunning.localizedDescription)
             return
@@ -253,12 +301,19 @@ final class LabModel: ObservableObject {
                         remember: Bool = false, fromKeychain: Bool = false) {
         let host = self.host
         let report: @Sendable (String) -> Void = { text in Task { @MainActor in self.say(text) } }
+        let connectionBefore = ports.first { $0.number == endpoint.port }?.connectionId
         Task.detached(priority: .userInitiated) {
             do {
                 let numbers: BenchNumbers
                 switch endpoint.kind {
                 case .disk: numbers = try Bench.runDisk(endpoint, password: password, say: report)
                 case .adb: numbers = try Bench.runADB(endpoint, say: report)
+                }
+                // A replug during the test means the numbers may belong to another cable.
+                let connectionAfter = Discovery.ports().first { $0.number == endpoint.port }?.connectionId
+                if connectionBefore != connectionAfter {
+                    throw BenchError.failed("The connection on port \(endpoint.port ?? 0) changed during the test. "
+                        + "The result was not saved.")
                 }
                 let result = CableResult(
                     date: Self.today(), endpoint: endpoint.label, kind: endpoint.kind.rawValue,

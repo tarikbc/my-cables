@@ -81,10 +81,16 @@ struct ContentView: View {
 
     @ViewBuilder
     private var detail: some View {
+        // An overlay never changes the column's size, so the split view keeps its layout.
         detailContent
-            .safeAreaInset(edge: .top, spacing: 0) {
-                if let detected = lab.detected { DetectedBanner(detected: detected) }
+            .overlay(alignment: .bottom) {
+                if let detected = lab.detected {
+                    DetectedBanner(detected: detected)
+                        .padding(.bottom, 14)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
+            .animation(.snappy, value: lab.detected)
     }
 
     @ViewBuilder

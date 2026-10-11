@@ -94,26 +94,31 @@ struct DetectedBanner: View {
                 Text(detail).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
-            if detected.isNew {
+            if detected.isSuggestion {
+                Button("Add Cable") { lab.addSuggested() }.buttonStyle(.borderedProminent)
+            }
+            if detected.isNew || detected.isSuggestion {
                 Menu("This Is…") {
                     ForEach(lab.data.cables.filter { $0.id != detected.cableID && $0.emarker == nil }) { cable in
                         Button(cable.name) { lab.linkDetected(to: cable.id) }
                     }
                 }
                 .fixedSize()
-                .help("Pick the saved cable this is. Its e-marker moves there and the new entry goes away.")
+                .help("Pick the saved cable this is. Its e-marker moves there and any new entry goes away.")
             }
-            Button("Dismiss") { lab.dismissDetected() }
+            Button(detected.isSuggestion ? "Ignore" : "Dismiss") { lab.dismissDetected() }
         }
         .padding(12)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
         .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color.accentColor.opacity(0.35)))
+        .shadow(color: .black.opacity(0.25), radius: 12, y: 4)
+        .frame(maxWidth: 820)
         .padding(.horizontal, 16)
-        .padding(.top, 10)
     }
 
     private var title: String {
         guard detected.identity != nil else { return "Cable on port \(detected.port) has no e-marker" }
+        if detected.isSuggestion { return "Unsaved cable on port \(detected.port)" }
         if detected.isNew { return "New cable on port \(detected.port). Cable Lab added it." }
         return "Port \(detected.port): \(lab.cable(detected.cableID)?.name ?? "known cable")"
     }
@@ -121,6 +126,9 @@ struct DetectedBanner: View {
     private var detail: String {
         guard let identity = detected.identity else {
             return "It cannot describe itself. If it is new, add it with + and run a test to measure it."
+        }
+        if detected.isSuggestion {
+            return "\(identity.summary). Add it, or use This Is… if you saved it before without an e-marker."
         }
         if detected.isNew {
             return "\(identity.summary). Rename it, or use This Is… if it is a cable you saved before."

@@ -45,7 +45,7 @@ extension LabModel {
                 "ports": Control.object(ports),
                 "saved_password": hasSavedPassword,
                 "detected": detected.map { d -> [String: Any] in
-                    ["port": d.port, "new": d.isNew, "cable": d.cableID ?? NSNull(),
+                    ["port": d.port, "new": d.isNew, "suggestion": d.isSuggestion, "cable": d.cableID ?? NSNull(),
                      "summary": d.identity?.summary ?? "no e-marker"]
                 } ?? NSNull(),
                 "cables": data.cables.map(summary),
@@ -140,6 +140,16 @@ extension LabModel {
             change { try $0.link(identity, to: cableID) }
             if detected?.identity == identity { detected = nil }
             return Control.object(cable(cableID))
+
+        case "accept":
+            guard detected?.isSuggestion == true else { throw ControlError("There is no cable suggestion to accept.") }
+            addSuggested()
+            return Control.object(cable(detected?.cableID))
+
+        case "ignore":
+            guard detected != nil else { throw ControlError("There is no banner to dismiss.") }
+            dismissDetected()
+            return ["dismissed": true]
 
         case "forget-password":
             forgetPassword()

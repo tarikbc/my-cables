@@ -163,6 +163,8 @@ public enum ControlCLI {
       remove-result CABLE INDEX     Delete one result (INDEX starts at 0)
       ports                         Every USB-C port, with the e-marker of the cable plugged in
       link CABLE --port N           Store the e-marker of the cable on port N on a saved cable
+      accept                        Add the suggested (unsaved, e-marked) cable
+      ignore                        Dismiss the cable banner
       forget-password               Delete the Mac password saved in the Keychain
 
     fields: --brand --rated-data --rated-power --length --ends --looks --notes
@@ -199,7 +201,7 @@ public enum ControlCLI {
         }
 
         switch cmd {
-        case "state", "devices", "cables", "ports", "forget-password":
+        case "state", "devices", "cables", "ports", "forget-password", "accept", "ignore":
             return (["cmd": cmd], false, nil)
         case "link":
             guard positional.count == 1, let port = options["--port"].flatMap({ Int($0) }) else {
