@@ -34,6 +34,16 @@ final class EmarkerTests: XCTestCase {
         XCTAssertNotEqual(e.fingerprint, CableIdentity.decode(metadata: ltt)?.fingerprint)
     }
 
+    func testEPRFlagWith20VoltsIs100Watts() throws {
+        // The real "Chinese 40 Gb/s" chip: <000a2043> sets EPR (bit 17) but declares 20 V max.
+        let e = try XCTUnwrap(CableIdentity.decode(metadata: metadata(
+            [[0x38, 0x01, 0x60, 0x18], [0x0d, 0x04, 0, 0], [0, 0, 0, 0], [0x43, 0x20, 0x0a, 0x00]])))
+        XCTAssertTrue(e.epr)
+        XCTAssertEqual(e.maxVolts, 20)
+        XCTAssertEqual(e.ratedData, "40 Gb/s")
+        XCTAssertEqual(e.ratedPower, "100 W")
+    }
+
     func testRejectsNonCables() {
         // An ID header with product type 0 (not a cable) and too few VDOs.
         XCTAssertNil(CableIdentity.decode(metadata: metadata([[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])))

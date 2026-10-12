@@ -49,7 +49,9 @@ public struct CableIdentity: Codable, Hashable, Sendable {
 
     public var ratedPower: String {
         guard let currentA else { return "" }
-        let volts = epr || maxVolts >= 50 ? 48 : min(maxVolts, 20)
+        // Follow the declared voltage, not the EPR flag: some chips set EPR but declare 20 V, and 5 A at
+        // 20 V is 100 W. Only a 50 V cable carries 48 V EPR (240 W).
+        let volts = maxVolts >= 50 ? 48 : min(maxVolts, 20)
         return "\(volts * currentA) W"
     }
 

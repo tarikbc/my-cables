@@ -37,6 +37,7 @@ struct CableDetailView: View {
             .padding(24)
             .frame(maxWidth: 860, alignment: .leading)
         }
+        .contentMargins(.bottom, lab.detected == nil ? 0 : 110, for: .scrollContent)
         .navigationTitle(cable?.name ?? "New Cable")
         .onAppear {
             fields = cable.map(CableFields.init) ?? CableFields()

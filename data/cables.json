@@ -279,7 +279,39 @@
       "rated_data" : "40 Gb/s",
       "rated_power" : "240 W",
       "results" : [
-
+        {
+          "bytes" : 4294967296,
+          "date" : "2026-10-11",
+          "endpoint" : "Samsung PSSD T7 Shield",
+          "host" : "Mac15,9",
+          "kind" : "disk",
+          "link_bps" : 10000000000,
+          "read_s" : 5.2247,
+          "write_s" : 4.9619
+        }
+      ]
+    },
+    {
+      "brand" : "Jisulife",
+      "ends" : "USB-C to USB-C",
+      "id" : "jisulife-cable",
+      "length" : "1 m",
+      "looks" : "",
+      "name" : "Jisulife cable",
+      "notes" : "",
+      "rated_data" : "",
+      "rated_power" : "",
+      "results" : [
+        {
+          "bytes" : 1073741824,
+          "date" : "2026-10-11",
+          "endpoint" : "Samsung PSSD T7 Shield",
+          "host" : "Mac15,9",
+          "kind" : "disk",
+          "link_bps" : 480000000,
+          "read_s" : 34.4136,
+          "write_s" : 31.1994
+        }
       ]
     }
   ]

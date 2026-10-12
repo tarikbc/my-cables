@@ -96,6 +96,13 @@ struct DetectedBanner: View {
             Spacer()
             if detected.isSuggestion {
                 Button("Add Cable") { lab.addSuggested() }.buttonStyle(.borderedProminent)
+            } else if detected.identity == nil {
+                Button("Add Cable") {
+                    lab.selection = .newCable
+                    lab.dismissDetected()
+                }
+                .buttonStyle(.borderedProminent)
+                .help("Open a new cable form: type the brand and ratings, press Return, then run a test")
             }
             if detected.isNew || detected.isSuggestion {
                 Menu("This Is…") {
@@ -109,7 +116,7 @@ struct DetectedBanner: View {
             Button(detected.isSuggestion ? "Ignore" : "Dismiss") { lab.dismissDetected() }
         }
         .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+        .background(Color(nsColor: .windowBackgroundColor), in: RoundedRectangle(cornerRadius: 10))
         .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color.accentColor.opacity(0.35)))
         .shadow(color: .black.opacity(0.25), radius: 12, y: 4)
         .frame(maxWidth: 820)
@@ -117,7 +124,7 @@ struct DetectedBanner: View {
     }
 
     private var title: String {
-        guard detected.identity != nil else { return "Cable on port \(detected.port) has no e-marker" }
+        guard detected.identity != nil else { return "Cable on port \(detected.port) has no e-marker chip" }
         if detected.isSuggestion { return "Unsaved cable on port \(detected.port)" }
         if detected.isNew { return "New cable on port \(detected.port). Cable Lab added it." }
         return "Port \(detected.port): \(lab.cable(detected.cableID)?.name ?? "known cable")"
@@ -125,7 +132,7 @@ struct DetectedBanner: View {
 
     private var detail: String {
         guard let identity = detected.identity else {
-            return "It cannot describe itself. If it is new, add it with + and run a test to measure it."
+            return "The Mac got no answer from a cable chip. That is normal for 3 A (60 W) USB 2.0 cables, Apple’s 60 W charge cable included. 5 A (100 to 240 W) and 10 Gb/s or faster cables must have one. Add it by hand, then run a test."
         }
         if detected.isSuggestion {
             return "\(identity.summary). Add it, or use This Is… if you saved it before without an e-marker."
